@@ -6,6 +6,7 @@ import cv2
 from rlpyt.envs.base import Env, EnvSpaces, EnvStep
 from rlpyt.utils.collections import is_namedtuple_class, is_namedtuple
 from rlpyt.spaces.int_box import IntBox
+from rlpyt.samplers.collections import TrajInfo
 
 import deepmind_lab
 
@@ -18,6 +19,9 @@ LEVELS = ['lt_chasm', 'lt_hallway_slope', 'lt_horseshoe_color', 'lt_space_bounce
 
 def _action(*entries):
     return np.array(entries, dtype=np.intc)
+
+def _rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
 
 class DeepmindLabEnv(Env):
@@ -53,15 +57,15 @@ class DeepmindLabEnv(Env):
         ]
 
         self._action_space = IntBox(low=0, high=len(self._action_set))
-        obs_shape = (3, self._height, self._width)  # Only works for RGB_INTERLEAVED
-        self._observation_space = IntBox(low=0, high=255, shape=obs_shape, dtype="uint8")
-        self._obs = np.zeros(obs_shape, dtype=np.uint8)
+        self._obs_shape = (1, self._height, self._width)  # Only works for RGB_INTERLEAVED
+        self._observation_space = IntBox(low=0, high=255, shape=self._obs_shape, dtype="uint8")
+        self._obs = np.zeros(self._obs_shape, dtype=np.uint8)
         self._total_reward = 0
         self.reset()
 
     def _update_obs(self):
-        obs = self._lab.observations()['RGB_INTERLEAVED']
-        self._obs = np.transpose(obs, axes=(2, 0, 1))
+        obs = _rgb2gray(self._lab.observations()['RGB_INTERLEAVED'])
+        self._obs = np.expand_dims(obs, axis=0)
 
     def step(self, action):
         reward = self._lab.step(self._action_set[action])
@@ -100,3 +104,13 @@ class DeepmindLabEnv(Env):
     @property
     def horizon(self):
         return self._horizon
+
+class LabTrajInfo(TrajInfo):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.GameScore = 0
+
+    def step(self, observation, action, reward, done, agent_info, env_info):
+        super().step(observation, action, reward, done, agent_info, env_info)
+        self.GameScore = getattr(env_info, "total_reward", 0)

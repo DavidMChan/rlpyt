@@ -1,7 +1,7 @@
 
 import torch
 
-from rlpyt.agents.base import (AgentStep, RecurrentAgentMixin, 
+from rlpyt.agents.base import (AgentStep, RecurrentAgentMixin,
     AlternatingRecurrentAgentMixin)
 from rlpyt.agents.dqn.dqn_agent import DqnAgent
 from rlpyt.utils.buffer import buffer_to, buffer_func, buffer_method
