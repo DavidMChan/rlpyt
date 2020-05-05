@@ -15,13 +15,14 @@ use rlpyt.utils.logging.context.add_exp_param().
 
 from rlpyt.samplers.serial.sampler import SerialSampler
 from rlpyt.envs.lab import DeepmindLabEnv
-from rlpyt.algos.dqn.dqn import DQN
-from rlpyt.agents.dqn.atari.atari_dqn_agent import AtariDqnAgent
+from rlpyt.algos.pg.ppo import PPO
+from rlpyt.agents.pg.atari import AtariFfAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
 from rlpyt.utils.logging.context import logger_context
 
 
 def build_and_train(level="nav_maze_random_goal_01", run_ID=0, cuda_idx=None):
+    affinity = dict(cuda_idx=cuda_idx, workers_cpus=list(range(8)))
     sampler = SerialSampler(
         EnvCls=DeepmindLabEnv,
         env_kwargs=dict(level=level),
@@ -33,19 +34,19 @@ def build_and_train(level="nav_maze_random_goal_01", run_ID=0, cuda_idx=None):
         eval_max_steps=int(10e3),
         eval_max_trajectories=5,
     )
-    algo = DQN(min_steps_learn=1e3)  # Run with defaults.
-    agent = AtariDqnAgent()
+    algo = PPO()
+    agent = AtariFfAgent()
     runner = MinibatchRlEval(
         algo=algo,
         agent=agent,
         sampler=sampler,
         n_steps=50e6,
-        log_interval_steps=1e5,
-        affinity=dict(cuda_idx=cuda_idx),
+        log_interval_steps=1e3,
+        affinity=affinity,
     )
     config = dict(level=level)
-    name = "lab_dqn"
-    log_dir = "lab_example_1"
+    name = "lab_ppo"
+    log_dir = "lab_example_3"
     with logger_context(log_dir, run_ID, name, config, snapshot_mode="last"):
         runner.train()
 

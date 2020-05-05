@@ -28,8 +28,8 @@ class DeepmindLabEnv(Env):
 
     def __init__(self, level, width=84, height=84, horizon=27000):
 
-        if level not in LEVELS:
-            raise ValueError('Level {} not found in deepmind lab'.format(level))
+        # if level not in LEVELS:
+        #     raise ValueError('Level {} not found in deepmind lab'.format(level))
 
         self._level = level
         self._width = width
